@@ -108,7 +108,8 @@ server <- function(input, output) {
     
     # Table with year values wide, easier to see trends across time when viewed as table
     df.plot.wide <- df.plot.long %>% 
-      pivot_wider(names_from = year, values_from = percentCover_sum)
+      pivot_wider(names_from = year, values_from = percentCover_sum) %>% 
+      arrange(scientificName)
     
     return(list(long = df.plot.long, wide = df.plot.wide))
   })
@@ -123,7 +124,12 @@ server <- function(input, output) {
     
     dt <- datatable(
       data,
-      options = sty.dt.compact, filter = "top", rownames = F,
+      caption = "Table: Summed percent cover, per species, per year",
+      options = list(
+        paging = F, dom = 'iftr', scrollY = "30vh", scrollX = T,
+        initComplete = DT::JS("function(){$(this).addClass('compact');}"),
+        columnDefs = list(list(className = "dt-center", targets = "_all"))
+      ), filter = "top", rownames = F,
       class = "display compact cell-border stripe"
     )
   })
@@ -140,9 +146,13 @@ server <- function(input, output) {
     
     p <- ggplot(
       data, aes(
-        x = year, y = percentCover_sum, group = scientificName, color = scientificName
-      )
-    ) +
+        x = year, y = percentCover_sum, group = scientificName, color = scientificName,
+        text = paste0(
+          "<b>Year:</b> ", year, "<br>",
+          "<b>Taxon ID:</b> ", taxonID, "<br>",
+          "<b>Scientific Name:</b> ", scientificName, "<br>",
+          "<b>Summed Percent Cover:</b> ", percentCover_sum
+        ))) +
       geom_line(linewidth = 0.5, alpha = 0.5) +
       # geom_point(size = 1, alpha = 0.5) +
       geom_jitter(width = 0.001, height = 0.001, size = 1, alpha = 0.5) + # Distinguish overlapping data points on zoom
@@ -150,10 +160,10 @@ server <- function(input, output) {
       scale_color_viridis(discrete = T) +
       labs(
         title = paste0(input$plot, ", Summed Percent Cover by Species, ", years[1], " to ", years[2]),
-        x = "<b>Summed Percent Cover</b>", y = "<b>Year</b>"
+        x = "<b>Year</b>", y = "<b>Summed Percent Cover</b>"
       )
     
-    p <- ggplotly(p)
+    p <- ggplotly(p, tooltip = "text")
   })
   
 }
