@@ -8,6 +8,8 @@ library(tidyr)
 library(dplyr)
 library(plotly)
 library(viridis)
+library(shiny)
+library(DT)
 
 # Suppress dplyr::summarise info
 options(dplyr.summarise.inform = F)
