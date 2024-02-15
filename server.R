@@ -109,7 +109,8 @@ server <- function(input, output) {
     # Table with year values wide, easier to see trends across time when viewed as table
     df.plot.wide <- df.plot.long %>% 
       pivot_wider(names_from = year, values_from = percentCover_sum) %>% 
-      arrange(scientificName)
+      arrange(scientificName) %>% 
+      ungroup()
     
     return(list(long = df.plot.long, wide = df.plot.wide))
   })
