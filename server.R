@@ -122,6 +122,10 @@ server <- function(input, output) {
     
     data <- portal_1m2_plot_tables()$wide
     
+    # Replace NA values in numeric columns w/ 0
+    # h/t https://stackoverflow.com/questions/19379081
+    data <- data %>% mutate_if(is.numeric, ~replace_na(., 0))
+    
     dt <- datatable(
       data,
       caption = "Table: Summed percent cover, per species, per year",
@@ -129,9 +133,15 @@ server <- function(input, output) {
         paging = F, dom = 'iftr', scrollY = "30vh", scrollX = T,
         initComplete = DT::JS("function(){$(this).addClass('compact');}"),
         columnDefs = list(list(className = "dt-center", targets = "_all"))
-      ), filter = "top", rownames = F,
-      class = "display compact cell-border stripe"
-    )
+      ),
+      filter = "top", rownames = F, class = "display compact cell-border stripe"
+    ) %>%
+      formatStyle("scientificName", fontSize = "80%") %>%
+      formatStyle(
+        colnames(data)[grepl("^[[:digit:]]+$", colnames(data))],
+        backgroundColor = styleInterval(0, c("#ffffb8", "#ccffcc")),
+        color = styleInterval(0, c("lightgrey", "black"))
+      )
   })
   
   
@@ -146,7 +156,8 @@ server <- function(input, output) {
     
     p <- ggplot(
       data, aes(
-        x = year, y = percentCover_sum, group = scientificName, color = scientificName,
+        # x = year, y = percentCover_sum, group = scientificName, color = scientificName,
+        x = year, y = percentCover_sum, group = taxonID, color = taxonID,
         text = paste0(
           "<b>Year:</b> ", year, "<br>",
           "<b>Taxon ID:</b> ", taxonID, "<br>",
@@ -158,6 +169,7 @@ server <- function(input, output) {
       geom_jitter(width = 0.001, height = 0.001, size = 1, alpha = 0.5) + # Distinguish overlapping data points on zoom
       scale_x_continuous(expand = c(0.005, 0.005)) +
       scale_color_viridis(discrete = T) +
+      theme_light() +
       labs(
         title = paste0(input$plot, ", Summed Percent Cover by Species, ", years[1], " to ", years[2]),
         x = "<b>Year</b>", y = "<b>Summed Percent Cover</b>"
