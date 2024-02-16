@@ -14,7 +14,6 @@ server <- function(input, output) {
   })
   
   
-  
   ##### Get Portal data #####
   
   data <- reactiveValues() # For cacheing
@@ -76,21 +75,32 @@ server <- function(input, output) {
     
     req(input$site)
     
-    df <- getData()$div_1m2
-    
-    df.spp <- df %>% 
+    df <- getData()$div_1m2 %>% 
       filter(
-        divDataType == "plantSpecies"
-        & !is.na(percentCover)
+        !is.na(percentCover) # Removes e.g. 'sampling impractical' records
         & !subplotID %in% c("31_1_4", "41_1_1") # Makes pre-2019 data comparable
-      ) %>% 
-      group_by(plotID, taxonID, scientificName, year) %>% 
-      summarise(
-        percentCover_sum = sum(percentCover),
-      ) %>% 
-      arrange(plotID, year, scientificName)
+      )
     
-    return(df.spp)
+    # Species table
+    df.spp <- df %>% 
+      filter(divDataType == "plantSpecies") %>% 
+      group_by(plotID, taxonID, scientificName, year) %>% 
+      summarise(percentCover_sum = sum(percentCover)) %>% 
+      arrange(plotID, year, scientificName) %>% 
+      ungroup()
+    
+    # otherVariables table
+    df.var <- df %>% 
+      filter(
+        divDataType == "otherVariables"
+        & !otherVariables %in% "overstory" # Deprecated, only present in very old data
+      ) %>% 
+      group_by(plotID, otherVariables, year) %>% 
+      summarise(percentCover_sum = sum(percentCover)) %>% 
+      arrange(plotID, year, otherVariables) %>% 
+      ungroup()
+    
+    return(list(df.spp = df.spp, df.var = df.var))
   })
   
   
@@ -100,8 +110,10 @@ server <- function(input, output) {
     req(input$plot)
     
     plot <- input$plot
+    dataType <- input$portal_data_type
     
-    df <- portal_1m2_summary_all()
+    if(dataType == "plantSpecies") df <- portal_1m2_summary_all()$df.spp
+    if(dataType == "otherVariables") df <- portal_1m2_summary_all()$df.var
     
     # Filter to plot
     df.plot.long <- df %>% filter(plotID == plot)
@@ -109,8 +121,18 @@ server <- function(input, output) {
     # Table with year values wide, easier to see trends across time when viewed as table
     df.plot.wide <- df.plot.long %>% 
       pivot_wider(names_from = year, values_from = percentCover_sum) %>% 
-      arrange(scientificName) %>% 
-      ungroup()
+      mutate_if(is.numeric, ~replace_na(., 0)) # Replace NA values with 0
+    
+    if(dataType == "plantSpecies") df.plot.wide <- df.plot.wide %>% arrange(scientificName)
+    if(dataType == "otherVariables") df.plot.wide <- df.plot.wide %>% arrange(otherVariables)
+    
+    # Back to long form, now with '0' values when not observed in a bout
+    df.plot.long <- df.plot.wide %>% 
+      pivot_longer(
+        cols = colnames(df.plot.wide)[grepl("^[[:digit:]]+$", colnames(df.plot.wide))],
+        names_to = "year", values_to = "percentCover_sum"
+      ) %>% 
+      mutate(year = as.numeric(year))
     
     return(list(long = df.plot.long, wide = df.plot.wide))
   })
@@ -122,14 +144,14 @@ server <- function(input, output) {
     req(input$plot)
     
     data <- portal_1m2_plot_tables()$wide
+    dataType <- input$portal_data_type
     
-    # Replace NA values in numeric columns w/ 0
-    # h/t https://stackoverflow.com/questions/19379081
-    data <- data %>% mutate_if(is.numeric, ~replace_na(., 0))
+    if(dataType == "otherVariables") titleType <- "Other Variable"
+    if(dataType == "plantSpecies") titleType <- "Taxon"
     
     dt <- datatable(
       data,
-      caption = "Table: Summed percent cover, per species, per year",
+      caption = paste0("Table: Summed Percent Cover, per ", titleType, ", per year"),
       options = list(
         paging = F, dom = 'iftr', scrollY = "30vh", scrollX = T,
         initComplete = DT::JS("function(){$(this).addClass('compact');}"),
@@ -137,7 +159,7 @@ server <- function(input, output) {
       ),
       filter = "top", rownames = F, class = "display compact cell-border stripe"
     ) %>%
-      formatStyle("scientificName", fontSize = "80%") %>%
+      formatStyle(names(data)[names(data) %in% "scientificName"], fontSize = "80%") %>%
       formatStyle(
         colnames(data)[grepl("^[[:digit:]]+$", colnames(data))],
         backgroundColor = styleInterval(0, c("#ffffb8", "#ccffcc")),
@@ -151,28 +173,50 @@ server <- function(input, output) {
     req(input$plot)
     
     data <- portal_1m2_plot_tables()$long
+    dataType <- input$portal_data_type
     
     # Year range for plot title
     years <- range(data$year)
     
-    p <- ggplot(
-      data, aes(
-        # x = year, y = percentCover_sum, group = scientificName, color = scientificName,
-        x = year, y = percentCover_sum, group = taxonID, color = taxonID,
-        text = paste0(
-          "<b>Year:</b> ", year, "<br>",
-          "<b>Taxon ID:</b> ", taxonID, "<br>",
-          "<b>Scientific Name:</b> ", scientificName, "<br>",
-          "<b>Summed Percent Cover:</b> ", percentCover_sum
-        ))) +
-      geom_line(linewidth = 0.5, alpha = 0.5) +
-      # geom_point(size = 1, alpha = 0.5) +
-      geom_jitter(width = 0.001, height = 0.001, size = 1, alpha = 0.5) + # Distinguish overlapping data points on zoom
+    ## Make the plot
+    
+    if(dataType == "plantSpecies"){
+      
+      titleType <- "Taxon"
+      
+      p <- ggplot(
+        data, aes(
+          x = year, y = percentCover_sum, group = taxonID, color = taxonID,
+          text = paste0(
+            "<b>Year:</b> ", year, "<br>",
+            "<b>Taxon ID:</b> ", taxonID, "<br>",
+            "<b>Scientific Name:</b> ", scientificName, "<br>",
+            "<b>Summed Percent Cover:</b> ", percentCover_sum
+          )))
+    }
+    
+    if(dataType == "otherVariables"){
+      
+      titleType <- "Other Variable"
+      
+      p <- ggplot(
+        data, aes(
+          x = year, y = percentCover_sum, group = otherVariables, color = otherVariables,
+          text = paste0(
+            "<b>Year:</b> ", year, "<br>",
+            "<b>Variable</b> ", otherVariables, "<br>",
+            "<b>Summed Percent Cover:</b> ", percentCover_sum
+          )))
+    }
+    
+    p <- p +
+      geom_line(linewidth = 0.5, alpha = 0.7) +
+      geom_jitter(width = 0.001, height = 0.001, size = 1, alpha = 0.7) + # Distinguish overlapping data points on zoom
       scale_x_continuous(expand = c(0.005, 0.005)) +
       scale_color_viridis(discrete = T) +
       theme_light() +
       labs(
-        title = paste0(input$plot, ", Summed Percent Cover by Species, ", years[1], " to ", years[2]),
+        title = paste0(input$plot, ", Summed Percent Cover, per ", titleType, ", ", years[1], " to ", years[2]),
         x = "<b>Year</b>", y = "<b>Summed Percent Cover</b>"
       )
     
