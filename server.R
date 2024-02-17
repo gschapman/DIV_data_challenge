@@ -68,6 +68,7 @@ server <- function(input, output) {
     } else {
       
       data <- getData()$div_1m2
+      data <- data[!is.na(data$percentCover),] # Remove plots with only SI records
       
       # Update plotIDs
       site_plots <- sort(unique(data$plotID))
