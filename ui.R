@@ -19,12 +19,15 @@ ui <- fluidPage(
       
       selectInput("site", "Site:", c("")),
       
+      selectInput("bout", "Bout Number:", c("")),
+      
       div(
         style = "color: dimgrey; margin-bottom: 15px;",
         strong("To display data, select a plot ID after the Portal download has completed:")
       ),
       
       selectInput("plot", "Plot:", c("")),
+      
       radioButtons(
         "portal_data_type", "Data Type:", choices = c("plantSpecies", "otherVariables"), inline = T
       )

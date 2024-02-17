@@ -1,34 +1,34 @@
-# rm(list=ls()) # Clear global environment
-# graphics.off() # Close plots/figures
-# 
-# library(neonUtilities)
-# library(lubridate)
-# library(ggplot2)
-# library(tidyr)
-# library(dplyr)
-# library(plotly)
-# library(viridis)
-# library(shiny)
-# library(DT)
-# 
-# # Suppress dplyr::summarise info
-# options(dplyr.summarise.inform = F)
-# 
-# site <- "SCBI"
-# 
-# DIV.portal <- loadByProduct(
-#   dpID = "DP1.10058.001",
-#   site = site,
-#   check.size = F
-# )
+rm(list=ls()) # Clear global environment
+graphics.off() # Close plots/figures
+
+library(neonUtilities)
+library(lubridate)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(plotly)
+library(viridis)
+library(shiny)
+library(DT)
+
+# Suppress dplyr::summarise info
+options(dplyr.summarise.inform = F)
+
+site <- "SRER"
+
+DIV.portal <- loadByProduct(
+  dpID = "DP1.10058.001",
+  site = site,
+  check.size = F
+)
 # 
 # # saveRDS(DIV.portal, "DIV_portal_local_temp.rds")
 # # DIV.portal <- readRDS("DIV_portal_local_temp.rds")
 # 
 # 
 # 
-# DIV.1m2 <- DIV.portal[["div_1m2Data"]] %>%
-#   mutate(year = year(endDate))
+DIV.1m2 <- DIV.portal[["div_1m2Data"]] %>%
+  mutate(year = year(endDate))
 # 
 # # This would be selectable
 # plots <- unique(DIV.1m2$plotID)

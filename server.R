@@ -50,35 +50,48 @@ server <- function(input, output) {
       
       removeModal()
       
-    } else {
-      
-      # Load cached data if found in cache
+    } else # Load cached data if available
       data.div_1m2.ret <- data$div_1m2[data$div_1m2$siteID == site,]
-    }
     
     return(list(div_1m2 = data.div_1m2.ret))
   })
   
   
-  
-  # Update available plotIDs
+  # Update available bouts and plotIDs
   observe({
-    data <- getData()$div_1m2
-    site_plots <- sort(unique(data[data$siteID == input$site,]$plotID))
-    updateSelectInput(inputId = "plot", choices = c("", site_plots))
+    
+    if(input$site == ""){
+      
+      updateSelectInput(inputId = "plot", choices = "")
+      updateSelectInput(inputId = "bout", choices = "")
+      
+    } else {
+      
+      data <- getData()$div_1m2
+      
+      # Update plotIDs
+      site_plots <- sort(unique(data$plotID))
+      updateSelectInput(inputId = "plot", choices = c("", site_plots))
+      
+      # Update bouts
+      site_bouts <- sort(unique(data$boutNumber))
+      updateSelectInput(inputId = "bout", choices = site_bouts, selected = site_bouts[1])
+    }
   })
-  
   
   
   # Main processing of all 1m2 data
   portal_1m2_summary_all <- reactive({
     
-    req(input$site)
+    req(input$site, input$bout)
+    
+    bout <- input$bout
     
     df <- getData()$div_1m2 %>% 
       filter(
         !is.na(percentCover) # Removes e.g. 'sampling impractical' records
         & !subplotID %in% c("31_1_4", "41_1_1") # Makes pre-2019 data comparable
+        & boutNumber == bout
       )
     
     # Species table
