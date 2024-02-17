@@ -2,7 +2,7 @@
 ui <- fluidPage(
   
   # Application title
-  titlePanel("Data Challenge - DIV Percent Cover by Species, Over Time"),
+  titlePanel("DIV, Summed 1m2 Percent Cover, Over Time"),
   
   sidebarLayout(
     

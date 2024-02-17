@@ -145,13 +145,14 @@ server <- function(input, output) {
     
     data <- portal_1m2_plot_tables()$wide
     dataType <- input$portal_data_type
+    plot <- input$plot
     
     if(dataType == "otherVariables") titleType <- "Other Variable"
     if(dataType == "plantSpecies") titleType <- "Taxon"
     
     dt <- datatable(
       data,
-      caption = paste0("Table: Summed Percent Cover, per ", titleType, ", per year"),
+      caption = paste0("Table: ", plot, ", ", titleType, ", Summed Percent Cover, per year"),
       options = list(
         paging = F, dom = 'iftr', scrollY = "30vh", scrollX = T,
         initComplete = DT::JS("function(){$(this).addClass('compact');}"),
@@ -174,6 +175,7 @@ server <- function(input, output) {
     
     data <- portal_1m2_plot_tables()$long
     dataType <- input$portal_data_type
+    plot <- input$plot
     
     # Year range for plot title
     years <- range(data$year)
@@ -192,7 +194,8 @@ server <- function(input, output) {
             "<b>Taxon ID:</b> ", taxonID, "<br>",
             "<b>Scientific Name:</b> ", scientificName, "<br>",
             "<b>Summed Percent Cover:</b> ", percentCover_sum
-          )))
+          ))) +
+        scale_color_viridis(discrete = T)
     }
     
     if(dataType == "otherVariables"){
@@ -206,17 +209,17 @@ server <- function(input, output) {
             "<b>Year:</b> ", year, "<br>",
             "<b>Variable</b> ", otherVariables, "<br>",
             "<b>Summed Percent Cover:</b> ", percentCover_sum
-          )))
+          ))) +
+        scale_color_manual(values = colors.otherVars)
     }
     
     p <- p +
       geom_line(linewidth = 0.5, alpha = 0.7) +
       geom_jitter(width = 0.001, height = 0.001, size = 1, alpha = 0.7) + # Distinguish overlapping data points on zoom
       scale_x_continuous(expand = c(0.005, 0.005)) +
-      scale_color_viridis(discrete = T) +
       theme_light() +
       labs(
-        title = paste0(input$plot, ", Summed Percent Cover, per ", titleType, ", ", years[1], " to ", years[2]),
+        title = paste0(plot, ", ", titleType, ", Summed Percent Cover, per ", years[1], " to ", years[2]),
         x = "<b>Year</b>", y = "<b>Summed Percent Cover</b>"
       )
     
