@@ -115,8 +115,10 @@ server <- function(input, output) {
     if(dataType == "plantSpecies") df <- portal_1m2_summary_all()$df.spp
     if(dataType == "otherVariables") df <- portal_1m2_summary_all()$df.var
     
-    # Filter to plot
-    df.plot.long <- df %>% filter(plotID == plot)
+    # Filter to plot, remove plotID col
+    df.plot.long <- df %>%
+      filter(plotID == plot) %>% 
+      select(!plotID)
     
     # Table with year values wide, easier to see trends across time when viewed as table
     df.plot.wide <- df.plot.long %>% 
@@ -147,12 +149,15 @@ server <- function(input, output) {
     dataType <- input$portal_data_type
     plot <- input$plot
     
-    if(dataType == "otherVariables") titleType <- "Other Variable"
-    if(dataType == "plantSpecies") titleType <- "Taxon"
+    if(dataType == "otherVariables") titleType <- "Other Variables"
+    if(dataType == "plantSpecies") titleType <- "Plant Taxa"
     
     dt <- datatable(
       data,
-      caption = paste0("Table: ", plot, ", ", titleType, ", Summed Percent Cover, per year"),
+      caption = tags$caption(
+        style = "color: black; font-weight: bold;",
+        paste0("Table: ", plot, ", ", titleType, ", Summed Percent Cover, per year")
+      ),
       options = list(
         paging = F, dom = 'iftr', scrollY = "30vh", scrollX = T,
         initComplete = DT::JS("function(){$(this).addClass('compact');}"),
@@ -168,7 +173,7 @@ server <- function(input, output) {
       )
   })
   
-  
+  # Output plotly graph
   output$spp_plot_plotly <- renderPlotly({
     
     req(input$plot)
@@ -184,7 +189,7 @@ server <- function(input, output) {
     
     if(dataType == "plantSpecies"){
       
-      titleType <- "Taxon"
+      titleType <- "Plant Taxa"
       
       p <- ggplot(
         data, aes(
@@ -200,7 +205,7 @@ server <- function(input, output) {
     
     if(dataType == "otherVariables"){
       
-      titleType <- "Other Variable"
+      titleType <- "Other Variables"
       
       p <- ggplot(
         data, aes(
@@ -215,11 +220,11 @@ server <- function(input, output) {
     
     p <- p +
       geom_line(linewidth = 0.5, alpha = 0.7) +
-      geom_jitter(width = 0.001, height = 0.001, size = 1, alpha = 0.7) + # Distinguish overlapping data points on zoom
+      geom_jitter(width = 0.001, height = 0, size = 1, alpha = 0.7) + # Distinguish overlapping data points on zoom
       scale_x_continuous(expand = c(0.005, 0.005)) +
       theme_light() +
       labs(
-        title = paste0(plot, ", ", titleType, ", Summed Percent Cover, per ", years[1], " to ", years[2]),
+        title = paste0(plot, ", ", titleType, ", Summed Percent Cover, ", years[1], " to ", years[2]),
         x = "<b>Year</b>", y = "<b>Summed Percent Cover</b>"
       )
     
