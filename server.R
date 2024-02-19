@@ -45,6 +45,17 @@ server <- function(input, output) {
       data.div_1m2.ret <- data.portal[["div_1m2Data"]] %>%
         mutate(year = year(endDate))
       
+      # Update 'nativeStatus' based on code
+      nativeStat <- data.frame(
+        nativeStatusCode = c("N", "I", "UNK", "NI"),
+        nativeStatus = c("Native", "Introduced", "Unknown", "Native/Introduced")
+      )
+      
+      data.div_1m2.ret <- merge(
+        data.div_1m2.ret, nativeStat,
+        by = "nativeStatusCode", all.x = T
+      )
+      
       # Cache
       data$div_1m2 <- rbind(data$div_1m2, data.div_1m2.ret)
       
@@ -98,7 +109,7 @@ server <- function(input, output) {
     # Species table
     df.spp <- df %>% 
       filter(divDataType == "plantSpecies") %>% 
-      group_by(plotID, taxonID, scientificName, year) %>% 
+      group_by(plotID, taxonID, scientificName, year, nativeStatus) %>% 
       summarise(percentCover_sum = sum(percentCover)) %>% 
       arrange(plotID, year, scientificName) %>% 
       ungroup()

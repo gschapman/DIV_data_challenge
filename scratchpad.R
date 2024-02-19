@@ -14,21 +14,42 @@ library(DT)
 # Suppress dplyr::summarise info
 options(dplyr.summarise.inform = F)
 
-site <- "SRER"
+site <- "SCBI"
 
 DIV.portal <- loadByProduct(
   dpID = "DP1.10058.001",
   site = site,
   check.size = F
 )
-# 
-# # saveRDS(DIV.portal, "DIV_portal_local_temp.rds")
-# # DIV.portal <- readRDS("DIV_portal_local_temp.rds")
-# 
-# 
-# 
+
 DIV.1m2 <- DIV.portal[["div_1m2Data"]] %>%
   mutate(year = year(endDate))
+
+nativeStat <- data.frame(
+  nativeStatusCode = c("N", "I", "UNK", "NI"),
+  nativeStatus = c("Native", "Introduced", "Unknown", "Native/Introduced")
+)
+
+DIV.1m2 <- merge(
+  DIV.1m2, nativeStat,
+  by = "nativeStatusCode", all.x = T
+)
+
+df.spp <- DIV.1m2 %>% 
+  filter(divDataType == "plantSpecies") %>% 
+  group_by(plotID, taxonID, scientificName, year) %>% 
+  summarise(percentCover_sum = sum(percentCover)) %>% 
+  arrange(plotID, year, scientificName) %>% 
+  ungroup()
+
+df.spp.nat <- DIV.1m2 %>% 
+  filter(divDataType == "plantSpecies") %>% 
+  group_by(plotID, taxonID, scientificName, year, nativeStatus) %>% 
+  summarise(percentCover_sum = sum(percentCover)) %>% 
+  arrange(plotID, year, scientificName) %>% 
+  ungroup()
+
+
 # 
 # # This would be selectable
 # plots <- unique(DIV.1m2$plotID)
@@ -83,3 +104,4 @@ DIV.1m2 <- DIV.portal[["div_1m2Data"]] %>%
 # # ggplot(DIV.spp, aes(x = year, y = percentCover)) +
 # #   geom_boxplot()
 # 
+
