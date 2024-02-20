@@ -28,8 +28,8 @@ ui <- fluidPage(
       
       selectInput("plot", "Plot:", c("")),
       
-      radioButtons(
-        "portal_data_type", "Data Type:", choices = c("plantSpecies", "otherVariables"), inline = T
+      selectInput(
+        "portal_data_type", "Data Type:", choices = c("plantSpecies", "otherVariables", "Nativity Status")
       )
       
     ),

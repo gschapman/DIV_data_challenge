@@ -23,6 +23,11 @@ colors.otherVars <- c(
   Traces = "#cccccc", missing = "#000000"
 )
 
+# Define colors for 'Nativity Status'
+colors.nativeStat <- c(
+  Native = "#88aa33", Introduced = "#883311", Unknown = "#777777", `Native/Introduced` = "#ffaa33"
+)
+
 # colors.otherVars <- data.frame(
 #   Other.vars = names(colors.otherVars), color = colors.otherVars
 # )

@@ -125,7 +125,15 @@ server <- function(input, output) {
       arrange(plotID, year, otherVariables) %>% 
       ungroup()
     
-    return(list(df.spp = df.spp, df.var = df.var))
+    # Nativity status table
+    df.nat <- df %>% 
+      filter(divDataType == "plantSpecies") %>% 
+      group_by(plotID, year, nativeStatus) %>% 
+      summarise(percentCover_sum = sum(percentCover)) %>% 
+      arrange(plotID, year, nativeStatus) %>% 
+      ungroup()
+    
+    return(list(df.spp = df.spp, df.var = df.var, df.nat = df.nat))
   })
   
   
@@ -139,6 +147,7 @@ server <- function(input, output) {
     
     if(dataType == "plantSpecies") df <- portal_1m2_summary_all()$df.spp
     if(dataType == "otherVariables") df <- portal_1m2_summary_all()$df.var
+    if(dataType == "Nativity Status") df <- portal_1m2_summary_all()$df.nat
     
     # Filter to plot, remove plotID col
     df.plot.long <- df %>%
@@ -152,6 +161,7 @@ server <- function(input, output) {
     
     if(dataType == "plantSpecies") df.plot.wide <- df.plot.wide %>% arrange(scientificName)
     if(dataType == "otherVariables") df.plot.wide <- df.plot.wide %>% arrange(otherVariables)
+    if(dataType == "Nativity Status") df.plot.wide <- df.plot.wide %>% arrange(nativeStatus)
     
     # Back to long form, now with '0' values when not observed in a bout
     df.plot.long <- df.plot.wide %>% 
@@ -176,6 +186,7 @@ server <- function(input, output) {
     
     if(dataType == "otherVariables") titleType <- "Other Variables"
     if(dataType == "plantSpecies") titleType <- "Plant Taxa"
+    if(dataType == "Nativity Status") titleType <- "Nativity Status"
     
     dt <- datatable(
       data,
@@ -241,6 +252,22 @@ server <- function(input, output) {
             "<b>Summed Percent Cover:</b> ", percentCover_sum
           ))) +
         scale_color_manual(values = colors.otherVars)
+    }
+    
+    if(dataType == "Nativity Status"){
+      
+      titleType <- "Nativity Status"
+      
+      p <- ggplot(
+        data, aes(
+          x = year, y = percentCover_sum, group = nativeStatus, color = nativeStatus,
+          text = paste0(
+            "<b>Year:</b> ", year, "<br>",
+            "<b>Nativity Status:</b> ", nativeStatus, "<br>",
+            "<b>Summed Percent Cover:</b> ", percentCover_sum
+          ))) +
+        scale_color_manual(values = colors.nativeStat)
+      
     }
     
     p <- p +
