@@ -29,7 +29,7 @@ ui <- fluidPage(
       selectInput("plot", "Plot:", c("")),
       
       selectInput(
-        "portal_data_type", "Data Type:", choices = c("plantSpecies", "otherVariables", "Nativity Status")
+        "portal_data_type", "Data Type:", choices = c("Plant Taxa", "Other Variables", "Nativity Status")
       )
       
     ),

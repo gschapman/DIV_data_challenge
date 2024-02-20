@@ -145,8 +145,8 @@ server <- function(input, output) {
     plot <- input$plot
     dataType <- input$portal_data_type
     
-    if(dataType == "plantSpecies") df <- portal_1m2_summary_all()$df.spp
-    if(dataType == "otherVariables") df <- portal_1m2_summary_all()$df.var
+    if(dataType == "Plant Taxa") df <- portal_1m2_summary_all()$df.spp
+    if(dataType == "Other Variables") df <- portal_1m2_summary_all()$df.var
     if(dataType == "Nativity Status") df <- portal_1m2_summary_all()$df.nat
     
     # Filter to plot, remove plotID col
@@ -159,8 +159,8 @@ server <- function(input, output) {
       pivot_wider(names_from = year, values_from = percentCover_sum) %>% 
       mutate_if(is.numeric, ~replace_na(., 0)) # Replace NA values with 0
     
-    if(dataType == "plantSpecies") df.plot.wide <- df.plot.wide %>% arrange(scientificName)
-    if(dataType == "otherVariables") df.plot.wide <- df.plot.wide %>% arrange(otherVariables)
+    if(dataType == "Plant Taxa") df.plot.wide <- df.plot.wide %>% arrange(scientificName)
+    if(dataType == "Other Variables") df.plot.wide <- df.plot.wide %>% arrange(otherVariables)
     if(dataType == "Nativity Status") df.plot.wide <- df.plot.wide %>% arrange(nativeStatus)
     
     # Back to long form, now with '0' values when not observed in a bout
@@ -184,15 +184,12 @@ server <- function(input, output) {
     dataType <- input$portal_data_type
     plot <- input$plot
     
-    if(dataType == "otherVariables") titleType <- "Other Variables"
-    if(dataType == "plantSpecies") titleType <- "Plant Taxa"
-    if(dataType == "Nativity Status") titleType <- "Nativity Status"
-    
+    # Make the table
     dt <- datatable(
       data,
       caption = tags$caption(
         style = "color: black; font-weight: bold;",
-        paste0("Table: ", plot, ", ", titleType, ", Summed Percent Cover, per year")
+        paste0("Table: ", plot, ", ", dataType, ", Summed Percent Cover, per year")
       ),
       options = list(
         paging = F, dom = 'iftr', scrollY = "30vh", scrollX = T,
@@ -223,10 +220,7 @@ server <- function(input, output) {
     
     ## Make the plot
     
-    if(dataType == "plantSpecies"){
-      
-      titleType <- "Plant Taxa"
-      
+    if(dataType == "Plant Taxa")
       p <- ggplot(
         data, aes(
           x = year, y = percentCover_sum, group = taxonID, color = taxonID,
@@ -237,12 +231,8 @@ server <- function(input, output) {
             "<b>Summed Percent Cover:</b> ", percentCover_sum
           ))) +
         scale_color_viridis(discrete = T)
-    }
     
-    if(dataType == "otherVariables"){
-      
-      titleType <- "Other Variables"
-      
+    if(dataType == "Other Variables")
       p <- ggplot(
         data, aes(
           x = year, y = percentCover_sum, group = otherVariables, color = otherVariables,
@@ -252,12 +242,8 @@ server <- function(input, output) {
             "<b>Summed Percent Cover:</b> ", percentCover_sum
           ))) +
         scale_color_manual(values = colors.otherVars)
-    }
     
-    if(dataType == "Nativity Status"){
-      
-      titleType <- "Nativity Status"
-      
+    if(dataType == "Nativity Status")
       p <- ggplot(
         data, aes(
           x = year, y = percentCover_sum, group = nativeStatus, color = nativeStatus,
@@ -267,8 +253,6 @@ server <- function(input, output) {
             "<b>Summed Percent Cover:</b> ", percentCover_sum
           ))) +
         scale_color_manual(values = colors.nativeStat)
-      
-    }
     
     p <- p +
       geom_line(linewidth = 0.5, alpha = 0.7) +
@@ -276,7 +260,7 @@ server <- function(input, output) {
       scale_x_continuous(expand = c(0.005, 0.005)) +
       theme_light() +
       labs(
-        title = paste0(plot, ", ", titleType, ", Summed Percent Cover, ", years[1], " to ", years[2]),
+        title = paste0(plot, ", ", dataType, ", Summed Percent Cover, ", years[1], " to ", years[2]),
         x = "<b>Year</b>", y = "<b>Summed Percent Cover</b>"
       )
     
