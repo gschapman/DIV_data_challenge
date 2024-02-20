@@ -24,8 +24,11 @@ colors.otherVars <- c(
 )
 
 # Define colors for 'Nativity Status'
+# colors.nativeStat <- c(
+#   Native = "#88aa33", Introduced = "#883311", Unknown = "#777777", `Native/Introduced` = "#ffaa33"
+# )
 colors.nativeStat <- c(
-  Native = "#88aa33", Introduced = "#883311", Unknown = "#777777", `Native/Introduced` = "#ffaa33"
+  Native = "darkgreen", Introduced = "darkred", Unknown = "darkgrey", `Native/Introduced` = "orange"
 )
 
 # colors.otherVars <- data.frame(
