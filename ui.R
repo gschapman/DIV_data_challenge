@@ -15,10 +15,13 @@ ui <- fluidPage(
         strong("To initiate Portal data download, select a Domain and Site:")
       ),
       
+      # Select domain
       selectInput("domain", "Domain:", c("")),
       
+      # Select site
       selectInput("site", "Site:", c("")),
       
+      # Select bout; first bout is selected by default
       selectInput("bout", "Bout Number:", c("")),
       
       div(
@@ -26,10 +29,17 @@ ui <- fluidPage(
         strong("To display data, select a plot ID after the Portal download has completed:")
       ),
       
+      # Select plot
       selectInput("plot", "Plot:", c("")),
       
+      # Select data type
       selectInput(
         "portal_data_type", "Data Type:", choices = c("Plant Taxa", "Other Variables", "Nativity Status")
+      ),
+      
+      # Transform plotted y-values to log2 if selected, which expands visibility of small values
+      radioButtons(
+        "transform_y", "Transform Y Axis:", choices = c("Linear", "Log (Base 2)"), inline = T
       )
       
     ),

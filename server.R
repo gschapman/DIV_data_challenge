@@ -214,11 +214,13 @@ server <- function(input, output) {
     data <- portal_1m2_plot_tables()$long
     dataType <- input$portal_data_type
     plot <- input$plot
+    transform_y <- input$transform_y
     
     # Year range for plot title
     years <- range(data$year)
     
     ## Make the plot
+    # Data and certain display values adjusted per selected data type
     
     if(dataType == "Plant Taxa")
       p <- ggplot(
@@ -254,6 +256,7 @@ server <- function(input, output) {
           ))) +
         scale_color_manual(values = colors.nativeStat)
     
+    # Consistent plotting parameters
     p <- p +
       geom_line(linewidth = 0.5, alpha = 0.7) +
       geom_jitter(width = 0.001, height = 0, size = 1, alpha = 0.7) + # Distinguish overlapping data points on zoom
@@ -263,6 +266,11 @@ server <- function(input, output) {
         title = paste0(plot, ", ", dataType, ", Summed Percent Cover, ", years[1], " to ", years[2]),
         x = "<b>Year</b>", y = "<b>Summed Percent Cover</b>"
       )
+    
+    # Transform y-values to log2 if selected, which expands visibility of small values
+    # h/t https://stackoverflow.com/questions/40219639/ for how to preserve '0' values
+    if(transform_y == "Log (Base 2)")
+      p <- p + scale_y_continuous(trans = scales::pseudo_log_trans(base = 2))
     
     p <- ggplotly(p, tooltip = "text")
   })
