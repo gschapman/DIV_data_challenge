@@ -189,7 +189,8 @@ server <- function(input, output) {
       data,
       caption = tags$caption(
         style = "color: black; font-weight: bold;",
-        paste0("Table: ", plot, ", ", dataType, ", Summed Percent Cover, per year")
+        paste0("Table: ", plot, ", ", dataType, ", Summed Percent Cover, per year"),
+        selection = list(mode = "multiple")
       ),
       options = list(
         paging = F, dom = 'iftr', scrollY = "30vh", scrollX = T,
@@ -206,25 +207,36 @@ server <- function(input, output) {
       )
   })
   
+  
   # Output plotly graph
   output$spp_plot_plotly <- renderPlotly({
     
     req(input$plot)
     
-    data <- portal_1m2_plot_tables()$long
+    data <- portal_1m2_plot_tables()
+    data.long <- data$long
     dataType <- input$portal_data_type
     plot <- input$plot
     transform_y <- input$transform_y
+    row.sel <- input$spp_plot_summary_rows_selected # Index of selected rows from table
+    
+    # Filter plotted values based on selected rows; show all if none selected
+    # Using index values since name of first column is variable
+    if(!is.null(row.sel)){
+      data.wide <- data$wide
+      sel <- data.wide[row.sel,][[1]] # Vec of selected values from first column
+      data.long <- data.long[data.long[[1]] %in% sel,] # Filter first column of plotted values
+    }
     
     # Year range for plot title
-    years <- range(data$year)
+    years <- range(data.long$year)
     
     ## Make the plot
-    # Data and certain display values adjusted per selected data type
     
+    # Data and certain display values adjusted per selected data type
     if(dataType == "Plant Taxa")
       p <- ggplot(
-        data, aes(
+        data.long, aes(
           x = year, y = percentCover_sum, group = taxonID, color = taxonID,
           text = paste0(
             "<b>Year:</b> ", year, "<br>",
@@ -232,29 +244,29 @@ server <- function(input, output) {
             "<b>Scientific Name:</b> ", scientificName, "<br>",
             "<b>Summed Percent Cover:</b> ", percentCover_sum
           ))) +
-        scale_color_viridis(discrete = T)
+      scale_color_viridis(discrete = T)
     
     if(dataType == "Other Variables")
       p <- ggplot(
-        data, aes(
+        data.long, aes(
           x = year, y = percentCover_sum, group = otherVariables, color = otherVariables,
           text = paste0(
             "<b>Year:</b> ", year, "<br>",
             "<b>Variable</b> ", otherVariables, "<br>",
             "<b>Summed Percent Cover:</b> ", percentCover_sum
           ))) +
-        scale_color_manual(values = colors.otherVars)
+      scale_color_manual(values = colors.otherVars)
     
     if(dataType == "Nativity Status")
       p <- ggplot(
-        data, aes(
+        data.long, aes(
           x = year, y = percentCover_sum, group = nativeStatus, color = nativeStatus,
           text = paste0(
             "<b>Year:</b> ", year, "<br>",
             "<b>Nativity Status:</b> ", nativeStatus, "<br>",
             "<b>Summed Percent Cover:</b> ", percentCover_sum
           ))) +
-        scale_color_manual(values = colors.nativeStat)
+      scale_color_manual(values = colors.nativeStat)
     
     # Consistent plotting parameters
     p <- p +
@@ -272,6 +284,7 @@ server <- function(input, output) {
     if(transform_y == "Log (Base 2)")
       p <- p + scale_y_continuous(trans = scales::pseudo_log_trans(base = 2))
     
+    # Convert to plotly graph, for interactivity
     p <- ggplotly(p, tooltip = "text")
   })
   
