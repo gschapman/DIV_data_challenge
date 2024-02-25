@@ -207,6 +207,11 @@ server <- function(input, output) {
       )
   })
   
+  # 'De-select All Rows' button
+  observeEvent(
+    input$spp_plot_summary_ds_all, DT::selectRows(DT::dataTableProxy("spp_plot_summary"), NULL)
+  )
+  
   
   # Output plotly graph
   output$spp_plot_plotly <- renderPlotly({
