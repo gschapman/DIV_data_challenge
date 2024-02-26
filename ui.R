@@ -1,8 +1,7 @@
 # Define UI
 ui <- fluidPage(
   
-  # Application title
-  titlePanel("DIV, Summed 1m2 Percent Cover, Over Time"),
+  tags$head(HTML("<title>DIV: Summed 1m2 Percent Cover, Over Time</title>")),
   
   ## DL Button style
   tags$style(
@@ -13,11 +12,12 @@ ui <- fluidPage(
     
     # Sidebar with a slider input
     sidebarPanel(
+      style = "margin-top: 15px;",
       width = 2,
       
       div(
         style = "color: dimgrey; margin-bottom: 15px; text-align: justify;",
-        strong("To initiate Portal data download, select a Domain and Site:")
+        strong("To initiate the Portal data download, select a Domain and Site:")
       ),
       
       # Select domain
@@ -42,23 +42,27 @@ ui <- fluidPage(
       # Select plot
       selectInput("plot", "Plot:", c("")),
       
-      div(
-        style = "color: dimgrey; margin-bottom: 10px; font-size: 90%; text-align: justify;",
-        "Transforming the time series plot to display values on a log scale can help expand clustered 'low' values:"
-      ),
-      
       # Transform plotted y-values to log2 if selected, which expands visibility of small values
-      radioButtons(
-        "transform_y", "Transform Y Axis:", choices = c("Linear", "Log (Base 2)"), inline = T
-      ),
+      hr(style = "height: 0.5px; border:none; background-color: silver; margin: 10px 0 10px 0;"),
       
       div(
-        style = "color: dimgrey; margin-bottom: 10px; font-size: 90%; text-align: justify;",
-        "Selecting rows in the data table will filter what is displayed in the time series plot.",
-        "Use the button below to de-select all rows, and plot all available values:"
+        style = "color: dimgrey; margin-bottom: 5px; font-size: 90%; text-align: justify;",
+        "Transforming the time series plot to display values on a log scale can help expand visibility of clustered 'low' values:"
+      ),
+      
+      radioButtons(
+        "transform_y", "Transform Time Series Plot:", choices = c("Linear", "Log (Base 2)"), inline = T
       ),
       
       # De-select all rows button
+      hr(style = "height: 0.5px; border:none; background-color: silver; margin: 0 0 10px 0;"),
+      
+      div(
+        style = "color: dimgrey; margin: 10px 0 10px 0; font-size: 90%; text-align: justify;",
+        strong("Selecting rows in the data table will filter what is displayed in the time series plot."),
+        "Use the button below to de-select all rows, and plot all available values:"
+      ),
+      
       actionButton("spp_plot_summary_ds_all", "De-select All Rows", width = "100%")
       
     ),
@@ -66,6 +70,14 @@ ui <- fluidPage(
     # Show table and plot of selected data
     mainPanel(
       width = 10,
+      
+      # Application Title
+      fluidRow(
+        div(
+          style = "margin: 10px 0 10px 0; font-size: 175%; text-align: center;",
+          strong("Plant Diversity:"), "Summed", HTML(paste0("1m", tags$sup("2"))), "Percent Cover, Over Time"
+        )
+      ),
       
       # Summary table
       fluidRow(

@@ -276,7 +276,7 @@ server <- function(input, output) {
     # Consistent plotting parameters
     p <- p +
       geom_line(linewidth = 0.5, alpha = 0.7) +
-      geom_jitter(width = 0.001, height = 0, size = 1, alpha = 0.7) + # Distinguish overlapping data points on zoom
+      geom_jitter(width = 0.001, height = 0, size = 1, alpha = 1) + # Distinguish overlapping data points on zoom
       scale_x_continuous(expand = c(0.005, 0.005)) +
       theme_light() +
       labs(
