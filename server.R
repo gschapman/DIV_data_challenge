@@ -1,5 +1,5 @@
 # Server logic
-server <- function(input, output) {
+server <- function(input, output){
   
   # Observers to update selection lists - domain and site
   # Plot id selections available after data download
