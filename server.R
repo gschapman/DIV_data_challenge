@@ -14,7 +14,7 @@ server <- function(input, output){
   })
   
   
-  ##### Get Portal data #####
+  ## Get Portal data #####
   
   data <- reactiveValues() # For cacheing
   data$div_1m2 <- data.frame() # 1m2 data cache
@@ -27,14 +27,12 @@ server <- function(input, output){
     
     site <- input$site
     
-    data.div_1m2.ret <- data.frame()
-    
     ## DL if needed
     if(!site %in% data$div_1m2$siteID){
       
       showModal(modalDialog("Downloading DIV Portal Data...", footer = NULL))
       
-      # Download
+      # Download Portal Data for site
       data.portal  <- loadByProduct(
         dpID = "DP1.10058.001",
         site = site,
@@ -42,34 +40,43 @@ server <- function(input, output){
         token = Sys.getenv("NEON_PAT"),
         check.size = F)
       
-      # Get 1m2 df, create 'year' variable
-      data.div_1m2.ret <- data.portal[["div_1m2Data"]] %>%
-        mutate(year = year(endDate))
-      
-      # Update 'nativeStatus' based on code
+      # To update 'nativeStatus' based on code
       nativeStat <- data.frame(
         nativeStatusCode = c("N", "I", "UNK", "NI"),
-        nativeStatus = c("Native", "Introduced", "Unknown", "Native/Introduced")
-      )
+        nativeStatus = c("Native", "Introduced", "Unknown", "Native/Introduced"))
       
-      data.div_1m2.ret <- merge(
-        data.div_1m2.ret, nativeStat,
-        by = "nativeStatusCode", all.x = T
-      )
+      ## Create single df with all data (1m + 10/100m)
+      data.div.all <- 
+        bind_rows(
+          data.portal$div_1m2Data, data.portal$div_10m2Data100m2Data) %>% 
+        mutate(
+          year = year(endDate),
+          divDataType = ifelse(
+            !is.na(taxonID), "plantSpecies", divDataType)) %>% 
+        # Break out components of 'subplotID' for easier filtering etc
+        separate_wider_delim(
+          subplotID, delim = "_", names = c("sub_100", "sub_area_m2", "sub_corner"),
+          too_few = "align_start", cols_remove = F) %>% 
+        # Merge full nativeStatus
+        left_join(
+          nativeStat, by = "nativeStatusCode")
+      
+      # 1m2 data only
+      data.div.1m <- filter(data.div.all, sub_area_m2 == 1)
       
       # Cache
-      data$div_1m2 <- rbind(data$div_1m2, data.div_1m2.ret)
+      data$div_1m2 <- rbind(data$div_1m2, data.div.1m)
       
       removeModal()
       
     } else # Load cached data if available
-      data.div_1m2.ret <- data$div_1m2[data$div_1m2$siteID == site,]
+      data.div.1m <- data$div_1m2[data$div_1m2$siteID == site,]
     
-    return(list(div_1m2 = data.div_1m2.ret))
+    return(list(div_1m2 = data.div.1m))
   })
   
   
-  # Update available bouts and plotIDs
+  ## Update available bouts and plotIDs ####
   observe({
     
     if(input$site == ""){
@@ -278,7 +285,8 @@ server <- function(input, output){
     p <- p +
       # geom_line(stat = "smooth", method = "loess", linewidth = 0.5, alpha = 0.7, se = F, span = 0.3) +
       geom_line(linewidth = 0.5, alpha = 0.7) +
-      geom_jitter(width = 0.001, height = 0, size = 1, alpha = 1) + # Distinguish overlapping data points on zoom
+      # Distinguish overlapping data points on zoom
+      geom_jitter(width = 0.001, height = 0, size = 1, alpha = 1) +
       scale_x_continuous(expand = c(0.005, 0.005), breaks = unique(data.long$year)) +
       theme_light() +
       labs(
