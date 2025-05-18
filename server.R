@@ -1,5 +1,5 @@
 # Server logic
-server <- function(input, output) {
+server <- function(input, output){
   
   # Observers to update selection lists - domain and site
   # Plot id selections available after data download
@@ -38,8 +38,9 @@ server <- function(input, output) {
       data.portal  <- loadByProduct(
         dpID = "DP1.10058.001",
         site = site,
-        check.size = F
-      )
+        include.provisional = T,
+        token = Sys.getenv("NEON_PAT"),
+        check.size = F)
       
       # Get 1m2 df, create 'year' variable
       data.div_1m2.ret <- data.portal[["div_1m2Data"]] %>%
@@ -275,14 +276,14 @@ server <- function(input, output) {
     
     # Consistent plotting parameters
     p <- p +
+      # geom_line(stat = "smooth", method = "loess", linewidth = 0.5, alpha = 0.7, se = F, span = 0.3) +
       geom_line(linewidth = 0.5, alpha = 0.7) +
       geom_jitter(width = 0.001, height = 0, size = 1, alpha = 1) + # Distinguish overlapping data points on zoom
-      scale_x_continuous(expand = c(0.005, 0.005)) +
+      scale_x_continuous(expand = c(0.005, 0.005), breaks = unique(data.long$year)) +
       theme_light() +
       labs(
         title = paste0(plot, ", ", dataType, ", Summed Percent Cover, ", years[1], " to ", years[2]),
-        x = "<b>Year</b>", y = "<b>Summed Percent Cover</b>"
-      )
+        x = "<b>Year</b>", y = "<b>Summed Percent Cover</b>")
     
     # Transform y-values to log2 if selected, which expands visibility of small values
     # h/t https://stackoverflow.com/questions/40219639/ for how to preserve '0' values
