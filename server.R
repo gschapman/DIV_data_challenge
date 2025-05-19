@@ -32,12 +32,15 @@ server <- function(input, output){
       
       showModal(modalDialog("Downloading DIV Portal Data...", footer = NULL))
       
+      token <- ifelse(
+        nchar(Sys.getenv("NEON_PAT")) > 0, Sys.getenv("NEON_PAT"), NA_character_)
+      
       # Download Portal Data for site
       data.portal  <- loadByProduct(
         dpID = "DP1.10058.001",
         site = site,
         include.provisional = T,
-        token = Sys.getenv("NEON_PAT"),
+        token = token,
         check.size = F)
       
       # To update 'nativeStatus' based on code
